@@ -1,6 +1,6 @@
 # Prandtl - A High-Order DGSEM CFD Solver
 | Workflow | Purpose | Status |
-|-----------|----------|--------|
+| --- | --- | --- |
 | **CI Quick** | Fast PR gating (build + smoke) | [![CI Quick](https://github.com/chess-uiuc/Prandtl/actions/workflows/ci-quick.yml/badge.svg)](https://github.com/chess-uiuc/Prandtl/actions/workflows/ci-quick.yml) |
 | **CI Complete** | Full sanitizer & example run (label `full-ci`) | [![CI Complete](https://github.com/chess-uiuc/Prandtl/actions/workflows/ci-complete.yml/badge.svg)](https://github.com/chess-uiuc/Prandtl/actions/workflows/ci-complete.yml) |
 | **Nightly** | Coverage + extended examples (cron) | [![Nightly](https://github.com/chess-uiuc/Prandtl/actions/workflows/ci-nightly.yml/badge.svg)](https://github.com/chess-uiuc/Prandtl/actions/workflows/ci-nightly.yml) |
