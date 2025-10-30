@@ -16,8 +16,7 @@ check_outputs() {
   local outdir="$1" ; local nsteps="$2"
   local pv="${outdir}/ParaView/ParaView.pvd"
   local c0="${outdir}/ParaView/Cycle$(fmt_cycle 0)"
-  local cN="${outdir}/ParaView/Cycle$(fmt_cycle "${nsteps}")"
-  [[ -f "${pv}" && -d "${c0}" && -d "${cN}" ]]
+  [[ -f "${pv}" && -d "${c0}" ]]
 }
 
 
@@ -26,7 +25,7 @@ NSTEPS=100
 TOP=$(pwd)
 BUILDDIR="${TOP}/build"
 EXE="${BUILDDIR}/Prandtl"
-RUNDIR="${TOP}/RunTests"
+RUNDIR="${TOP}/RegressionTests"
 LISTFILE=""
 ONECFG=""
 
@@ -112,8 +111,7 @@ run_one() {
   local work="${RUNDIR}/${exname}"
   rm -rf "${work}"
   mkdir -p "${work}"
-  local outdir="${work}/out"
-  mkdir -p "${outdir}"
+  local outdir="${work}"
 
   # Create a patched config inside work/
   local patched="${work}/config.patched.json"
@@ -121,7 +119,7 @@ run_one() {
   if [[ "${nsteps}" == "0" ]]; then
       nsteps=100
   fi
-  jq --argjson N "${nsteps}" --arg out "${outdir}" '
+  jq --argjson N "${nsteps}" '
     def isnum: type=="number";
     . as $root
     | ($root.runTime // {}) as $rt
@@ -131,18 +129,7 @@ run_one() {
         | .paraview  = true
         | .visit     = false
         | .nancheck  = true
-        # favor 10-step cadence when divisible to ensure Cycle000000 & Cycle00NNNN appear
-        | .vis_steps = ( if ($N % 10 == 0) then 10
-                         else (((($N/2)|floor) | if .==0 then 1 else . end))
-                         end )
-        | .variable_dt = false
-        | ( if (.dt? | isnum) then .
-            elif (.final_time? | isnum) then (.dt = (.final_time / $N))
-            else (.dt = 0.0000001)
-            end )
-        | .final_time = (.dt * $N)
-        | .initial_save_dt = (.dt * .vis_steps)
-        | .output_file_path = $out
+        | .output_file_path = "./"
         | .checkpoint_load = false
       )
   ' "${cfg_abs}" > "${patched}"
@@ -156,26 +143,19 @@ run_one() {
 
   # Basic regression: require ParaView.pvd + Cycle000000 + Cycle00NNNN
   if [[ ${run_rc} -eq 0 ]] && check_outputs "${outdir}" "${NSTEPS}"; then
-    echo "✓ Example OK: ${exname} (outputs in ${outdir})"
+    echo "✓ Regression Test OK: ${exname} (outputs in ${outdir})"
     SUCCEEDED+=("${cfg_rel}")
     return 0
   else
-    echo "✗ Example FAILED: ${exname}"
+    echo "✗ Regression Test FAILED: ${exname}"
     [[ ${run_rc} -ne 0 ]] && echo "  - runtime exit code: ${run_rc}"
     if [[ ! -f "${outdir}/ParaView/ParaView.pvd" ]]; then
       echo "  - missing: ${outdir}/ParaView/ParaView.pvd"
-    fi
-    if [[ ! -d "${outdir}/ParaView/Cycle$(fmt_cycle 0)" ]]; then
-      echo "  - missing: ${outdir}/ParaView/Cycle$(fmt_cycle 0)"
-    fi
-    if [[ ! -d "${outdir}/ParaView/Cycle$(fmt_cycle "${NSTEPS}")" ]]; then
-      echo "  - missing: ${outdir}/ParaView/Cycle$(fmt_cycle "${NSTEPS}")"
     fi
     FAILED+=("${cfg_rel}")
     return 1
   fi
 
-  echo "✓ Example OK: ${exname} (outputs in ${outdir})"
 }
 
 # ---- Iterate
@@ -186,7 +166,7 @@ done
 
 # ---- Summary
 echo
-echo "===== Example Summary ====="
+echo "===== Regression Runtime Summary ====="
 echo "Total: ${#CFGS[@]} | Succeeded: ${#SUCCEEDED[@]} | Failed: ${#FAILED[@]}"
 if (( ${#SUCCEEDED[@]} > 0 )); then
   printf '  ✓ %s\n' "${SUCCEEDED[@]}"

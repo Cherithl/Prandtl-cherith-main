@@ -12,6 +12,8 @@ jobs:
     env:
       CMAKE_BUILD_TYPE: RelWithDebInfo
       INSTALL_PREFIX: ${{ github.workspace }}/deps
+      PYVISTA_OFF_SCREEN: "true"
+      QT_QPA_PLATFORM: "offscreen"
     steps:
       - name: Checkout (with submodules)
         uses: actions/checkout@v4
@@ -23,13 +25,24 @@ jobs:
       - name: Install toolchain and deps (MPI, hypre, metis)
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            gcc-12 g++-12 gfortran-12 \
+          sudo apt-get install -y --no-install-recommends \
+            gcc-12 g++-12 gfortran-12 libgl1 libegl1 \
             mpich libmpich-dev environment-modules \
             cmake ninja-build pkg-config ccache jq
           echo "CC=mpicc"   >> $GITHUB_ENV
           echo "CXX=mpicxx" >> $GITHUB_ENV
           echo "FC=mpifort" >> $GITHUB_ENV
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ci-resources/requirements-ci.txt
 
       - name: Locate MFEM submodule
         id: mfemloc
@@ -94,11 +107,13 @@ jobs:
             -c TestCases/NavierStokes/2D/LidDrivenCavity/config.json \
             -n 100
 
-      - name: Example smoke test (IsentropicVortex)
+      - name: Example regression test (IsentropicVortex)
         run: |
-          scripts/test_run_example.sh \
-            -c TestCases/Euler/2D/IsentropicVortex/config.json \
-            -n 100
+          scripts/run_regression_test.sh \
+            -c TestCases/Euler/2D/IsentropicVortex/config.json
+          cd RegressionTests/IsentropicVortex
+          python ../../scripts/compare_viz.py ParaView/ParaView.pvd --fields Density --atol 5e-5 --rtol 2e-6
+          cd -
 
       - name: Unit smoke tests
         run: ctest --test-dir build -L smoke -j2 --output-on-failure
