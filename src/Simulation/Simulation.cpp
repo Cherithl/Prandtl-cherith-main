@@ -837,13 +837,13 @@ void Simulation::LoadConfig(const std::string &config_file_path)
 #else
             pd->RegisterField("Density", &rho);
 #endif
-            pd->RegisterField("Horizontal V", u.get());
+            pd->RegisterField("U", u.get());
             if (dim > 1)
             {
-                pd->RegisterField("Vertical V", v.get());
+                pd->RegisterField("V", v.get());
                 if (dim > 2)
                 {
-                    pd->RegisterField("Normal V", w.get());
+                    pd->RegisterField("W", w.get());
                 }
             }
             pd->RegisterField("Pressure", p.get());

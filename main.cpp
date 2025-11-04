@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
     if (config_file_path.empty())
     {
         std::cerr << "\nError: Configuration file not specified." << std::endl;
-        std::cerr << "Usage: " << argv[0] << " -c <path/to/config.jason>\n" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " -c <path/to/config.json>\n" << std::endl;
         return 1;
     }
 
