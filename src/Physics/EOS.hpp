@@ -129,14 +129,9 @@ namespace Prandtl
                                  const StateView &S, const real_t *grad_rho,
                                  const real_t *grad_p, real_t *grad_t) const
     {
-      const int dim = L.dim;
-      const real_t rho = density(phys, L, S);
-      const real_t pressor = pressure(phys, L, S)/rho;
-      const real_t cv = cp(phys, L, S)/phys.gamma;
-      const real_t fac = phys.gammaM1Inverse/(cv*rho);
-      for(int i = 0; i < dim; i++){
-        grad_t[i] = fac*(grad_p[i] - pressor*grad_rho[i]);
-      }
+      for(int i = 0; i < L.dim; i++){
+        grad_t[i] = grad_p[i]; // CL NOTE : we store T_xi in contiguous gradient array for LTE (W=[rho, u, v, w , T])
+      }  
     }
 
     template<typename StateView>
@@ -175,29 +170,20 @@ namespace Prandtl
     inline void entropy_state(const PhysicsConstants &phys, const StateLayout &L,
                               const InStateView &S, OutStateView &E) const
     {
-      const real_t p = pressure(phys, L, S);
-      const real_t gamma = phys.gamma;
       const real_t rho = S.mass(L);
-      const real_t s = std::log(p) - gamma*std::log(rho);
-      const real_t beta = rho / p;
+      const real_t T = temperature(phys, L, S);
       const real_t v2o2 = kinetic_energy_density(phys, L, S) / rho;
-      const real_t s_rho = (gamma - s)/(gamma - 1) - beta*v2o2;
+      const real_t beta = 1 / T;
 
-      E.set_mass(L, s_rho);
+      const real_t ent_1 = 0;
+
+      E.set_mass(L, ent_1);
       int dim = L.dim;
       int num_scalars = L.num_scalars;
       for(int idim = 0;idim < dim;idim++){
         E.set_momentum(L, idim, beta * S.velocity(L, idim));
       }
       E.set_energy(L, -beta);
-      // TODO: Update for correct treatment of passive scalars (depends on ES approach)
-      // - Here we should probably set the entropy state to scalar_state / density
-      // - If we do that, we need to modify the mass component of the entropy state
-      // - Making this fix will make the sensor function sensitive to the scalars
-      // - If we need to recover CV from this, lax scalar treatment is a nogo
-      for(int iscalar = 0;iscalar < num_scalars;iscalar++){
-        E.set_scalar(L, iscalar, 0.0);
-      }
     }
 
     template<typename InStateView, typename OutStateView>
@@ -206,27 +192,15 @@ namespace Prandtl
                                           const InStateView &S, const InStateView &dE,
                                           OutStateView &dPrim) const
     {
+      const real_t T = temperature(phys, L, S);
 
-      const real_t ke = kinetic_energy_density(phys, L, S);
-      const real_t p = pressure(phys, L, S);
-      const real_t rho = S.mass(L);
-      const real_t rhoE = S.energy(L);
-      const real_t ie = internal_energy_density(phys, L, S);
+      dPrim.set_mass(L, 0.0); // CL NOTE : won't be using density gradient in LTE (if W = [rho, u, v, w , T])
 
       int dim = L.dim;
-      int num_scalars = L.num_scalars;
-
-      real_t drho = 0.0;
       for(int idim = 0; idim < dim; idim++){
-        dPrim.set_momentum(L, idim, p/rho * (dE.momentum(L, idim) + S.velocity(L, idim)*dE.energy(L)));
-        drho += S.momentum(L, idim)*dPrim.momentum(L, idim);
+        dPrim.set_momentum(L, idim, dE.momentum(L, idim)*T + T*S.velocity(L, idim)*dE.energy(L));
       }
-      drho = rho*dE.mass(L) - dE.energy(L)*(ke - ie) + rho*drho/p;
-      dPrim.set_mass(L, drho);
-      dPrim.set_energy(L, p/rho * (dPrim.mass(L) + p*dE.energy(L)));
-      for(int isp = 0; isp < num_scalars; isp++){
-        dPrim.set_scalar(L, isp, 0.0); // just a placeholder for now
-      }
+      dPrim.set_energy(L, T * T * dE.energy(L));
     }
 
     template<typename InStateView, typename OutStateView>
