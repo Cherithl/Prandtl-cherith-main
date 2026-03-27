@@ -218,6 +218,13 @@ namespace Prandtl
       int dim = L.dim;
       int num_scalars = L.num_scalars;
 
+      std::cout << "\n\n CL DEBUG : With Dimensional Entropy Variables " << std::endl;
+      std::cout << "dE.mass(L): " << dE.mass(L) << std::endl;
+      for(int idim = 0; idim < dim; idim++){
+        std::cout << "dE.momentum(L, " << idim << "): " << dE.momentum(L, idim) << std::endl;
+      }
+      std::cout << "dE.energy(L): " << dE.energy(L) << std::endl << std::endl;
+      // std::exit(1);
       real_t drho = 0.0;
       for(int idim = 0; idim < dim; idim++){
         dPrim.set_momentum(L, idim, R_inv * (p/rho * (dE.momentum(L, idim) + S.velocity(L, idim)*dE.energy(L))));
