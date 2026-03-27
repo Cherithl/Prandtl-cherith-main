@@ -225,7 +225,7 @@ namespace Prandtl
       }
       drho = rho*dE.mass(L) - dE.energy(L)*(ke - ie) + rho*drho/p;
       dPrim.set_mass(L, R_inv * drho);
-      dPrim.set_energy(L, R_inv * (p/rho * (dPrim.mass(L) + p*dE.energy(L))));
+      dPrim.set_energy(L, p/rho * (dPrim.mass(L) + R_inv*p*dE.energy(L)));
       for(int isp = 0; isp < num_scalars; isp++){
         dPrim.set_scalar(L, isp, 0.0); // just a placeholder for now
       }
