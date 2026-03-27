@@ -82,17 +82,17 @@ void NoSlipAdiabWallBdrFaceIntegrator::ComputeBdrFaceLiftingFlux(const Vector &s
     }
     Prandtl::PointStateView S{state1.GetData()};
     v = -gasModel.energy(S);
-    fluxN(mass_eq) = gasModel.mass(S);
-    fluxN(mom_eq) = V(0) * v;
+    fluxN(mass_eq) = gasModel.mass(S)*0.0;
+    fluxN(mom_eq) = V(0) * v*0.0;
     if (dim > 1)
     {
-        fluxN(mom_eq+1) = V(1) * v;
+        fluxN(mom_eq+1) = V(1) * v*0.0;
         if (dim > 2)
         {
-            fluxN(mom_eq+2) = V(2) * v;
+            fluxN(mom_eq+2) = V(2) * v*0.0;
         }
     }
-    fluxN(en_eq) = -v;
+    fluxN(en_eq) = -v*0.0;
     fluxN -= state1;
 }
 
