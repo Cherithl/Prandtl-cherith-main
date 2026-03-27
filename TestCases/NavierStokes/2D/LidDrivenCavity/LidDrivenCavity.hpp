@@ -12,8 +12,8 @@ std::function<void(const Vector&, Vector&)> LidDrivenCavityIC(real_t Ma, real_t 
     {
         real_t p = 1.0 / (Ma * Ma * gamma);
         y(0) = 1.0;
-        y(1) = 0.0;
-        y(2) = 0.0;
+        y(1) = std::sin(x(0)) * std::cos(x(1)) * std::cos(x(2));
+        y(2) = -std::cos(x(0)) * std::sin(x(1)) * std::cos(x(2));
         y(3) = p / (gamma - 1.0);
     };
 }
