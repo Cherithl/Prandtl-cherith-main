@@ -182,14 +182,15 @@ namespace Prandtl
       const real_t beta = rho / p;
       const real_t v2o2 = kinetic_energy_density(phys, L, S) / rho;
       const real_t s_rho = (gamma - s)/(gamma - 1) - beta*v2o2;
+      const real_t R_gas = phys.R_gas;
 
-      E.set_mass(L, s_rho);
+      E.set_mass(L, R_gas * s_rho);
       int dim = L.dim;
       int num_scalars = L.num_scalars;
       for(int idim = 0;idim < dim;idim++){
-        E.set_momentum(L, idim, beta * S.velocity(L, idim));
+        E.set_momentum(L, idim, R_gas * beta * S.velocity(L, idim));
       }
-      E.set_energy(L, -beta);
+      E.set_energy(L, -beta * R_gas);
       // TODO: Update for correct treatment of passive scalars (depends on ES approach)
       // - Here we should probably set the entropy state to scalar_state / density
       // - If we do that, we need to modify the mass component of the entropy state
@@ -212,18 +213,19 @@ namespace Prandtl
       const real_t rho = S.mass(L);
       const real_t rhoE = S.energy(L);
       const real_t ie = internal_energy_density(phys, L, S);
+      const real_t R_inv = 1.0/phys.R_gas;
 
       int dim = L.dim;
       int num_scalars = L.num_scalars;
 
       real_t drho = 0.0;
       for(int idim = 0; idim < dim; idim++){
-        dPrim.set_momentum(L, idim, p/rho * (dE.momentum(L, idim) + S.velocity(L, idim)*dE.energy(L)));
+        dPrim.set_momentum(L, idim, R_inv * (p/rho * (dE.momentum(L, idim) + S.velocity(L, idim)*dE.energy(L))));
         drho += S.momentum(L, idim)*dPrim.momentum(L, idim);
       }
       drho = rho*dE.mass(L) - dE.energy(L)*(ke - ie) + rho*drho/p;
-      dPrim.set_mass(L, drho);
-      dPrim.set_energy(L, p/rho * (dPrim.mass(L) + p*dE.energy(L)));
+      dPrim.set_mass(L, R_inv * drho);
+      dPrim.set_energy(L, R_inv * (p/rho * (dPrim.mass(L) + p*dE.energy(L))));
       for(int isp = 0; isp < num_scalars; isp++){
         dPrim.set_scalar(L, isp, 0.0); // just a placeholder for now
       }
