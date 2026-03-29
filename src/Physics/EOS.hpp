@@ -218,21 +218,21 @@ namespace Prandtl
       int dim = L.dim;
       int num_scalars = L.num_scalars;
 
-      std::cout << "\n\n CL DEBUG : With Dimensional Entropy Variables " << std::endl;
-      std::cout << "dE.mass(L): " << dE.mass(L) << std::endl;
+      real_t dE_mass = dE.mass(L)*R_inv;
+      real_t dE_energy = dE.energy(L)*R_inv;
+      real_t dE_mom[dim];
       for(int idim = 0; idim < dim; idim++){
-        std::cout << "dE.momentum(L, " << idim << "): " << dE.momentum(L, idim) << std::endl;
+        dE_mom[idim] = dE.momentum(L, idim)*R_inv;
       }
-      std::cout << "dE.energy(L): " << dE.energy(L) << std::endl << std::endl;
-      // std::exit(1);
+
       real_t drho = 0.0;
       for(int idim = 0; idim < dim; idim++){
-        dPrim.set_momentum(L, idim, R_inv * (p/rho * (dE.momentum(L, idim) + S.velocity(L, idim)*dE.energy(L))));
+        dPrim.set_momentum(L, idim, p/rho * (dE_mom[idim] + S.velocity(L, idim)*dE_energy));
         drho += S.momentum(L, idim)*dPrim.momentum(L, idim);
       }
-      drho = rho*dE.mass(L) - dE.energy(L)*(ke - ie) + rho*drho/p;
-      dPrim.set_mass(L, R_inv * drho);
-      dPrim.set_energy(L, p/rho * (dPrim.mass(L) + R_inv*p*dE.energy(L)));
+      drho = rho*dE_mass - dE_energy*(ke - ie) + rho*drho/p;
+      dPrim.set_mass(L, drho);
+      dPrim.set_energy(L, p/rho * (dPrim.mass(L) + p*dE_energy));
       for(int isp = 0; isp < num_scalars; isp++){
         dPrim.set_scalar(L, isp, 0.0); // just a placeholder for now
       }
