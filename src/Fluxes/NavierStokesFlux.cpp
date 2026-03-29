@@ -92,15 +92,6 @@ namespace Prandtl
     flux(1, 1) = mu * (dvdx + dudy);
     flux(2, 1) = mu * (2.0 * dvdy - mu_bulk_loc * div);
     flux(3, 1) = vx * flux(1, 1) + vy * flux(2, 1) + kappa * grad_t[1];
-
-    std::cout<< "\n\n CL DEBUG : Debugging the gradient computation " << std::endl;
-    std::cout << "dudx: " << dudx << ", dudy: " << dudy << std::endl;
-    std::cout << "dvdx: " << dvdx << ", dvdy: " << dvdy << std::endl;
-    std::cout << "grad_rho[0]: " << grad_rho[0] << ", grad_rho[1]: " << grad_rho[1] << std::endl;
-    std::cout << "grad_p[0]: " << grad_p[0] << ", grad_p[1]: " << grad_p[1] << std::endl;
-    std::cout << "grad_t[0]: " << grad_t[0] << ", grad_t[1]: " << grad_t[1] << std::endl;
-    std::cout << "Exiting after debugging the gradient computation." << std::endl;
-    std::exit(1);
 }
 
   void NavierStokesFlux::ComputeViscousFlux(const Vector &state, const Vector &dqdx, DenseMatrix &flux) const
