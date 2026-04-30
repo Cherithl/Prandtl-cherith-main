@@ -98,7 +98,9 @@ private:
   
   std::unique_ptr<ParGridFunction> u, v, w;
   std::unique_ptr<ParGridFunction> p, rho_axi;
-  
+  #ifdef LTE_EOS
+  std::unique_ptr<ParGridFunction> T, rhoe;
+  #endif
   std::unique_ptr<ParaViewDataCollection> pd;
   std::unique_ptr<VisItDataCollection> vd;
   

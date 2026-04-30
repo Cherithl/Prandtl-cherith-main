@@ -900,6 +900,10 @@ void Simulation::LoadConfig(const std::string &config_file_path)
         }
     }
     p = std::make_unique<ParGridFunction>(fes.get());
+#ifdef LTE_EOS    
+    rhoe = std::make_unique<ParGridFunction>(fes.get());
+    T    = std::make_unique<ParGridFunction>(fes.get());
+#endif
 
 #ifdef AXISYMMETRIC
     rho_axi = std::make_unique<ParGridFunction>(fes.get());
@@ -917,16 +921,20 @@ void Simulation::LoadConfig(const std::string &config_file_path)
 #else
             pd->RegisterField("Density", &rho);
 #endif
-            pd->RegisterField("Horizontal V", u.get());
+            pd->RegisterField("U", u.get());
             if (dim > 1)
             {
-                pd->RegisterField("Vertical V", v.get());
+                pd->RegisterField("V", v.get());
                 if (dim > 2)
                 {
-                    pd->RegisterField("Normal V", w.get());
+                    pd->RegisterField("W", w.get());
                 }
             }
             pd->RegisterField("Pressure", p.get());
+#ifdef LTE_EOS
+            pd->RegisterField("RhoE", &energy);
+            pd->RegisterField("Temperature", T.get());
+#endif
 #ifdef SUBCELL_FV_BLENDING
             pd->RegisterField("Blending Coeff", alpha.get());
 #endif
@@ -1070,6 +1078,7 @@ void Simulation::Run()
                 }
             }
             (*p)(i) = gasModel->pressure(dofState);
+            (*T)(i) = gasModel->temperature(dofState);
         }
 #endif
 
@@ -1153,6 +1162,7 @@ void Simulation::Run()
                 }
             }
           (*p)(i) = gasModel->pressure(dofState);
+          (*T)(i) = gasModel->temperature(dofState);
         }
 #endif
 
