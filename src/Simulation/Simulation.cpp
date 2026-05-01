@@ -29,6 +29,8 @@
 #include "LTEVortex.hpp"
 #include "LTEBlob.hpp"
 
+#include "CPGVortex.hpp"
+
 #include "json.hpp"
 #include <filesystem>
 #include <mpi.h>
