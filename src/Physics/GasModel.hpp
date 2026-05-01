@@ -6,7 +6,9 @@
 #include "LteEOS.hpp"
 #include "Transport.hpp"
 #include "LteTransport.hpp"
-
+#ifdef LTE_EOS
+#include <mutation++.h>
+#endif
 namespace Prandtl
 {
 
@@ -21,6 +23,9 @@ namespace Prandtl
     StateLayout L;
     EOSImpl eos;
     TransportImpl transport;
+#ifdef LTE_EOS
+    std::shared_ptr<Mutation::Mixture> mix;
+#endif
 
     MFEM_HOST_DEVICE GasModel() = default;
 
@@ -28,7 +33,16 @@ namespace Prandtl
     GasModel(const PhysicsConstants &phys_in, const StateLayout &L_in,
              const EOSImpl &eos_in, const TransportImpl &tr_in)
       : phys(phys_in), L(L_in), eos(eos_in), transport(tr_in)
-    { };
+    {
+#ifdef LTE_EOS
+      Mutation::MixtureOptions opts("air_5");
+      opts.setStateModel("Equil");
+      opts.setThermodynamicDatabase("RRHO");
+      opts.setViscosityAlgorithm("Chapmann-Enskog_LDLT");
+      mix = std::make_shared<Mutation::Mixture>(opts);
+      mix->addComposition("N:0.8, O:0.2", true);
+#endif
+    };
 
     MFEM_HOST_DEVICE
     GasModel(const PhysicsConstants &phys_in, const StateLayout &L_in)
@@ -81,7 +95,14 @@ namespace Prandtl
     MFEM_HOST_DEVICE
     inline real_t pressure(const StateView &S) const
     {
+#ifdef LTE_EOS
+      real_t rho = density(S);
+      real_t rhoe   = rho * eos.specific_internal_energy(phys, L, S);
+      mix->setState(&rho, &rhoe, 0);
+      return mix->P();
+#else
       return eos.pressure(phys, L, S);
+#endif
     }
 
     template<typename StateView>
@@ -109,14 +130,28 @@ namespace Prandtl
     MFEM_HOST_DEVICE
     inline real_t temperature(const StateView &S) const
     {
+#ifdef LTE_EOS
+      real_t rho = density(S);
+      real_t rhoe   = rho * eos.specific_internal_energy(phys, L, S);
+      mix->setState(&rho, &rhoe, 0);
+      return mix->T();
+#else
       return eos.temperature(phys, L, S);
+#endif
     }
 
     template<typename StateView>
     MFEM_HOST_DEVICE
     inline real_t sound_speed(const StateView &S) const
     {
+#ifdef LTE_EOS
+      real_t rho = density(S);
+      real_t rhoe   = rho * eos.specific_internal_energy(phys, L, S);
+      mix->setState(&rho, &rhoe, 0);
+      return mix->equilibriumSoundSpeed();
+#else
       return eos.sound_speed(phys, L, S);
+#endif
     }
 
     template<typename StateView>
